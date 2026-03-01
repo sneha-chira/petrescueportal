@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title|default:"Pets" }} - Pet Rescue Portal{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">{{ title|default:"Pet Listings" }}</h1>
+                <p class="page-subtitle">Find your perfect companion from our loving pets</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="result-count">
+                    <span class="badge bg-primary rounded-pill px-3 py-2">
+                        <i class="fa-solid fa-paw me-2"></i>{{ object_list|length }} Results Found
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Main Content with Sidebar -->
+<div class="container mb-5">
+    <div class="row">
+        <!-- Left Sidebar - Filters -->
+        <div class="col-lg-3 mb-4">
+            <div class="filter-sidebar">
+                <div class="filter-title">
+                    <i class="fa-solid fa-filter"></i>
+                    <span>Filter Options</span>
+                </div>
+                <form method="get" class="filter-form">
+                    <div class="mb-4">
+                        {{ form.search|as_crispy_field }}
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.breed|as_crispy_field }}
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.color|as_crispy_field }}
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.location|as_crispy_field }}
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.gender|as_crispy_field }}
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.size|as_crispy_field }}
+                    </div>
+                    
+                    {% if form.status %}
+                    <div class="mb-4">
+                        {{ form.status|as_crispy_field }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary rounded-pill">
+                            <i class="fa-solid fa-search me-2"></i>Search
+                        </button>
+                        <a href="?" class="btn btn-outline-secondary rounded-pill">
+                            <i class="fa-solid fa-times me-2"></i>Clear Filters
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Content - Pet Listings -->
+        <div class="col-lg-9">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for pet in object_list %}
+                <div class="col">
+                    <div class="pet-card">
+                        <div class="position-relative overflow-hidden">
+                            {% if pet.image %}
+                            <img src="{{ pet.image.url }}" class="card-img-top" alt="{{ pet.breed }}" style="width: 100%; height: 250px; object-fit: cover;">
+                            {% else %}
+                            <img src="https://placedog.net/400/300?random={{ pet.pk }}" class="card-img-top" alt="{{ pet.breed }}" style="width: 100%; height: 250px; object-fit: cover;">
+                            {% endif %}
+                            <div class="position-absolute top-0 end-0 m-3">
+                                <span class="pet-badge bg-{{ pet.get_status_color }} text-white">
+                                    {{ pet.get_status_display }}
+                                </span>
+                            </div>
+                            {% if pet.status == 'adoption' %}
+                            <div class="position-absolute top-0 start-0 m-3">
+                                <span class="pet-badge bg-success text-white">
+                                    <i class="fa-solid fa-heart me-1"></i>Adopt Me
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="pet-card-body">
+                            <h5 class="pet-card-title">{{ pet.name|default:pet.breed }}</h5>
+                            
+                            <div class="pet-info">
+                                <i class="fa-solid fa-palette"></i>
+                                <span>{{ pet.color }}</span>
+                            </div>
+                            
+                            <div class="pet-info">
+                                <i class="fa-solid fa-location-dot"></i>
+                                <span>{{ pet.location }}</span>
+                            </div>
+                            
+                            {% if pet.age %}
+                            <div class="pet-info">
+                                <i class="fa-solid fa-birthday-cake"></i>
+                                <span>{{ pet.age }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            {% if pet.gender != 'unknown' %}
+                            <div class="pet-info">
+                                <i class="fa-solid fa-venus-mars"></i>
+                                <span>{{ pet.get_gender_display }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            {% if pet.size != 'medium' %}
+                            <div class="pet-info">
+                                <i class="fa-solid fa-ruler"></i>
+                                <span>{{ pet.get_size_display }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mt-3">
+                                <a href="{% url 'pet_detail' pet.pk %}" class="btn btn-primary rounded-pill w-100">
+                                    <i class="fa-solid fa-eye me-2"></i>View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <div class="empty-state">
+                        <i class="fa-solid fa-search text-muted mb-3" style="font-size: 4rem;"></i>
+                        <h3 class="text-muted">No pets found</h3>
+                        <p class="text-muted">Debug: object_list is empty or not passed</p>
+                        <p class="text-muted">Total pets in DB: {{ object_list|length|default:'0' }}</p>
+                        <div class="mt-4">
+                            <a href="?" class="btn btn-outline-primary rounded-pill">
+                                <i class="fa-solid fa-redo me-2"></i>Clear Filters
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div class="container">
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link rounded-start-pill" href="?page={{ page_obj.previous_page_number }}">
+                    <i class="fa-solid fa-chevron-left me-2"></i>Previous
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link rounded-start-pill" href="#" tabindex="-1">
+                    <i class="fa-solid fa-chevron-left me-2"></i>Previous
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link rounded-end-pill" href="?page={{ page_obj.next_page_number }}">
+                    Next<i class="fa-solid fa-chevron-right ms-2"></i>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link rounded-end-pill" href="#" tabindex="-1">
+                    Next<i class="fa-solid fa-chevron-right ms-2"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+<style>
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,133.3C960,128,1056,96,1152,90.7C1248,85,1344,107,1392,117.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
+    background-size: cover;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    position: relative;
+    z-index: 2;
+}
+
+.result-count {
+    position: relative;
+    z-index: 2;
+}
+
+/* Sidebar Styles */
+.filter-sidebar {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    position: sticky;
+    top: 100px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+}
+
+.filter-title {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+}
+
+.filter-title i {
+    margin-right: 0.5rem;
+    color: var(--primary-color);
+}
+
+.filter-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.filter-form label {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.filter-form .form-control {
+    border-radius: 10px;
+    border: 2px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.filter-form .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.pagination .page-link {
+    border: none;
+    margin: 0 2px;
+    padding: 10px 20px;
+    color: var(--primary-color);
+    background: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.pagination .page-link:hover {
+    background: var(--gradient-primary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.pagination .page-item.active .page-link {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #6b7280;
+    background: #f8f9fa;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+    .filter-sidebar {
+        position: relative;
+        top: 0;
+        max-height: none;
+        margin-bottom: 2rem;
+    }
+}
+</style>
+{% endblock %}
