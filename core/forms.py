@@ -50,13 +50,38 @@ class PetForm(forms.ModelForm):
 class AdoptionRequestForm(forms.ModelForm):
     class Meta:
         model = AdoptionRequest
-        fields = ['message']
+        fields = ['message', 'family_info', 'home_type', 'pet_experience']
         widgets = {
             'message': forms.Textarea(attrs={
                 'class': 'form-control', 
-                'rows': 5, 
-                'placeholder': 'Tell us why you would be a good match for this pet...'
-            })
+                'rows': 3, 
+                'placeholder': 'Why do you want to adopt this pet?'
+            }),
+            'family_info': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 3, 
+                'placeholder': 'Tell us about your family members, children, other pets...'
+            }),
+            'home_type': forms.Select(attrs={
+                'class': 'form-control',
+                'choices': [
+                    ('', 'Select home type'),
+                    ('apartment', 'Apartment'),
+                    ('house', 'House'),
+                    ('farm', 'Farm'),
+                    ('other', 'Other')
+                ]
+            }),
+            'pet_experience': forms.Select(attrs={
+                'class': 'form-control',
+                'choices': [
+                    ('', 'Select experience level'),
+                    ('first_time', 'First time pet owner'),
+                    ('experienced', 'Experienced with pets'),
+                    ('multiple_pets', 'Currently have multiple pets'),
+                    ('special_needs', 'Experience with special needs pets')
+                ]
+            }),
         }
 
 

@@ -25,12 +25,18 @@
             <div class="card-body p-4 p-md-5 d-flex flex-column h-100">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <h2 class="card-title fw-bold text-dark">{{ object.name|default:object.breed }}</h2>
-                    <span class="badge bg-{{ object.get_status_color }} fs-6 shadow-sm px-3 py-2">{{
-                        object.get_status_display }}</span>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-{{ object.get_status_color }} fs-6 shadow-sm px-3 py-2 rounded-pill">
+                            {% if object.status == 'lost' %}🔍 Lost{% endif %}
+                            {% if object.status == 'found' %}❤️ Found{% endif %}
+                            {% if object.status == 'adoption' %}🏠 Adoption{% endif %}
+                        </span>
+                    </div>
                 </div>
 
-                <h5 class="text-muted mb-4"><i class="fa-solid fa-location-dot text-danger me-2"></i>{{ object.location
-                    }}</h5>
+                <h5 class="text-muted mb-4">
+                    <span class="location-symbol">📍</span>{{ object.location }}
+                </h5>
 
                 <hr class="text-muted opacity-25">
 
@@ -80,15 +86,62 @@
                     <p class="text-dark">{{ object.description }}</p>
                 </div>
 
+                <!-- Contact Information -->
+                {% if object.contact_phone or object.contact_email %}
+                <div class="mb-4">
+                    <p class="text-muted mb-1 small fw-bold text-uppercase tracking-wide">Contact Information</p>
+                    <div class="row">
+                        {% if object.contact_phone %}
+                        <div class="col-md-6 mb-2">
+                            <p class="mb-0 fs-5 fw-medium text-dark">
+                                <i class="fa-solid fa-phone text-primary me-2"></i>{{ object.contact_phone }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if object.contact_email %}
+                        <div class="col-md-6 mb-2">
+                            <p class="mb-0 fs-5 fw-medium text-dark">
+                                <i class="fa-solid fa-envelope text-primary me-2"></i>{{ object.contact_email }}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
                 {% if object.status == 'adoption' %}
                 <div class="mt-auto">
                     {% if user.is_authenticated %}
-                    <button type="button" class="btn btn-success btn-lg rounded-pill shadow-sm fw-bold w-100" data-bs-toggle="modal" data-bs-target="#adoptionModal">
-                        <i class="fa-solid fa-heart me-2"></i>Adopt This Pet
-                    </button>
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-success btn-lg rounded-pill shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#adoptionModal">
+                            <i class="fa-solid fa-heart me-2"></i>Adopt This Pet
+                        </button>
+                        <a href="{% url 'toggle_favorite' object.pk %}" class="btn {% if is_favorite %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill shadow-sm fw-bold">
+                            <i class="fa-solid fa-heart{% if is_favorite %}-broken{% endif %} me-2"></i>
+                            {% if is_favorite %}Remove from Favorites{% else %}Add to Favorites{% endif %}
+                        </a>
+                    </div>
                     {% else %}
-                    <a href="{% url 'login' %}" class="btn btn-success btn-lg rounded-pill shadow-sm fw-bold w-100">
-                        <i class="fa-solid fa-sign-in-alt me-2"></i>Login to Adopt
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'login' %}" class="btn btn-success btn-lg rounded-pill shadow-sm fw-bold">
+                            <i class="fa-solid fa-sign-in-alt me-2"></i>Login to Adopt
+                        </a>
+                        <a href="{% url 'login' %}" class="btn btn-outline-danger rounded-pill shadow-sm fw-bold">
+                            <i class="fa-solid fa-heart me-2"></i>Login to Favorite
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="mt-auto">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'toggle_favorite' object.pk %}" class="btn {% if is_favorite %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill shadow-sm fw-bold w-100">
+                        <i class="fa-solid fa-heart{% if is_favorite %}-broken{% endif %} me-2"></i>
+                        {% if is_favorite %}Remove from Favorites{% else %}Add to Favorites{% endif %}
+                    </a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-outline-danger rounded-pill shadow-sm fw-bold w-100">
+                        <i class="fa-solid fa-heart me-2"></i>Login to Favorite
                     </a>
                     {% endif %}
                 </div>
@@ -110,14 +163,35 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted mb-4">Please tell us why you'd like to adopt {{ object.name|default:object.breed }}. This information will help us process your request.</p>
+                <p class="text-muted mb-4">Please tell us about yourself and your home to help us process your adoption request for {{ object.name|default:object.breed }}.</p>
                 
                 <form method="post" action="{% url 'submit_adoption_request' object.pk %}">
                     {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="message" class="form-label fw-semibold">Why do you want to adopt this pet?</label>
-                        <textarea class="form-control" id="message" name="message" rows="4" required
-                                  placeholder="Tell us about your home, experience with pets, and why you'd be a great owner..."></textarea>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="message" class="form-label fw-semibold">Why do you want to adopt this pet?</label>
+                            <textarea class="form-control" id="message" name="message" rows="3" required
+                                      placeholder="Tell us why you'd be a great match for this pet..."></textarea>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="home_type" class="form-label fw-semibold">Home Type</label>
+                            {{ adoption_request_form.home_type }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="family_info" class="form-label fw-semibold">Tell us about your family</label>
+                            <textarea class="form-control" id="family_info" name="family_info" rows="3"
+                                      placeholder="Family members, children, other pets, lifestyle..."></textarea>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="pet_experience" class="form-label fw-semibold">Pet Experience</label>
+                            {{ adoption_request_form.pet_experience }}
+                        </div>
                     </div>
                     
                     <div class="text-end">

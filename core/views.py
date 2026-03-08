@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.core.paginator import Paginator
-from .models import Pet, AdoptionRequest
+from .models import Pet, AdoptionRequest, Favorite
 from .forms import PetForm, AdoptionRequestForm, PetSearchForm, CustomUserCreationForm
 from django.contrib.auth import login
 
@@ -109,6 +109,12 @@ def adoption_form(request):
 def lost_pets_list(request):
     form = PetSearchForm(request.GET)
     pets = Pet.objects.filter(is_active=True, status='lost')
+    
+    # Check favorites for authenticated users
+    if request.user.is_authenticated:
+        favorite_pet_ids = Favorite.objects.filter(user=request.user).values_list('pet_id', flat=True)
+        for pet in pets:
+            pet.is_favorite = pet.id in favorite_pet_ids
     
     if form.is_valid():
         search = form.cleaned_data.get('search')
@@ -229,6 +235,10 @@ def adoption_list(request):
 def pet_detail(request, pk):
     pet = get_object_or_404(Pet, pk=pk, is_active=True)
     adoption_request_form = None
+    is_favorite = False
+    
+    if request.user.is_authenticated:
+        is_favorite = Favorite.objects.filter(user=request.user, pet=pet).exists()
     
     if request.user.is_authenticated and pet.status == 'adoption':
         if request.method == 'POST':
@@ -245,7 +255,8 @@ def pet_detail(request, pk):
     
     return render(request, 'pet_detail.html', {
         'object': pet,
-        'adoption_request_form': adoption_request_form
+        'adoption_request_form': adoption_request_form,
+        'is_favorite': is_favorite
     })
 
 @login_required
@@ -329,3 +340,166 @@ def reject_adoption_request(request, pk):
     messages.success(request, f'Adoption request for {adoption_request.pet.name or adoption_request.pet.breed} has been rejected.')
     
     return redirect('admin_adoption_requests')
+
+@login_required
+def analytics_dashboard(request):
+    if not request.user.is_superuser:
+        messages.error(request, 'You do not have permission to view this page.')
+        return redirect('dashboard')
+    
+    from django.db.models import Count, Q, Avg
+    from datetime import datetime, timedelta
+    import calendar
+    
+    # Get date ranges
+    today = datetime.now()
+    last_30_days = today - timedelta(days=30)
+    last_7_days = today - timedelta(days=7)
+    last_90_days = today - timedelta(days=90)
+    
+    # Pet Statistics
+    total_pets = Pet.objects.count()
+    active_pets = Pet.objects.filter(is_active=True).count()
+    lost_pets = Pet.objects.filter(status='lost').count()
+    found_pets = Pet.objects.filter(status='found').count()
+    adoption_pets = Pet.objects.filter(status='adoption').count()
+    
+    # Recent pets (last 30 days)
+    recent_pets = Pet.objects.filter(created_at__gte=last_30_days).count()
+    
+    # Adoption Request Statistics
+    total_requests = AdoptionRequest.objects.count()
+    pending_requests = AdoptionRequest.objects.filter(status='pending').count()
+    approved_requests = AdoptionRequest.objects.filter(status='approved').count()
+    rejected_requests = AdoptionRequest.objects.filter(status='rejected').count()
+    
+    # Recent requests (last 7 days)
+    recent_requests = AdoptionRequest.objects.filter(created_at__gte=last_7_days).count()
+    
+    # Monthly trends (last 6 months)
+    monthly_pets = []
+    monthly_requests = []
+    for i in range(6):
+        month_start = today.replace(day=1) - timedelta(days=i*30)
+        month_end = month_start.replace(day=calendar.monthrange(month_start.year, month_start.month)[1])
+        
+        pets_in_month = Pet.objects.filter(
+            created_at__gte=month_start,
+            created_at__lte=month_end
+        ).count()
+        
+        requests_in_month = AdoptionRequest.objects.filter(
+            created_at__gte=month_start,
+            created_at__lte=month_end
+        ).count()
+        
+        monthly_pets.append({
+            'month': month_start.strftime('%b'),
+            'count': pets_in_month
+        })
+        monthly_requests.append({
+            'month': month_start.strftime('%b'),
+            'count': requests_in_month
+        })
+    
+    monthly_pets.reverse()
+    monthly_requests.reverse()
+    
+    # Top locations with counts
+    top_locations = Pet.objects.values('location').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    # Top breeds with counts
+    top_breeds = Pet.objects.values('breed').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+    
+    # Pet status distribution
+    status_distribution = [
+        {'status': 'Lost', 'count': lost_pets, 'color': '#dc3545'},
+        {'status': 'Found', 'count': found_pets, 'color': '#198754'},
+        {'status': 'Available for Adoption', 'count': adoption_pets, 'color': '#0d6efd'}
+    ]
+    
+    # Request status distribution
+    request_distribution = [
+        {'status': 'Pending', 'count': pending_requests, 'color': '#ffc107'},
+        {'status': 'Approved', 'count': approved_requests, 'color': '#198754'},
+        {'status': 'Rejected', 'count': rejected_requests, 'color': '#dc3545'}
+    ]
+    
+    # Home type distribution
+    home_type_stats = AdoptionRequest.objects.values('home_type').annotate(
+        count=Count('id')
+    ).exclude(home_type__isnull=True)
+    
+    # Experience level distribution
+    experience_stats = AdoptionRequest.objects.values('pet_experience').annotate(
+        count=Count('id')
+    ).exclude(pet_experience__isnull=True)
+    
+    # Recent activity
+    recent_adoption_requests = AdoptionRequest.objects.select_related(
+        'pet', 'requester'
+    ).order_by('-created_at')[:10]
+    
+    # Performance metrics
+    approval_rate = (approved_requests / total_requests * 100) if total_requests > 0 else 0
+    average_requests_per_day = total_requests / 90 if total_requests > 0 else 0
+    pets_with_images = Pet.objects.exclude(image='').count()
+    image_upload_rate = (pets_with_images / total_pets * 100) if total_pets > 0 else 0
+    
+    context = {
+        # Basic stats
+        'total_pets': total_pets,
+        'active_pets': active_pets,
+        'lost_pets': lost_pets,
+        'found_pets': found_pets,
+        'adoption_pets': adoption_pets,
+        'recent_pets': recent_pets,
+        'total_requests': total_requests,
+        'pending_requests': pending_requests,
+        'approved_requests': approved_requests,
+        'rejected_requests': rejected_requests,
+        'recent_requests': recent_requests,
+        
+        # Charts data
+        'monthly_pets': monthly_pets,
+        'monthly_requests': monthly_requests,
+        'status_distribution': status_distribution,
+        'request_distribution': request_distribution,
+        'home_type_stats': home_type_stats,
+        'experience_stats': experience_stats,
+        
+        # Top data
+        'top_locations': top_locations,
+        'top_breeds': top_breeds,
+        'recent_adoption_requests': recent_adoption_requests,
+        
+        # Performance metrics
+        'approval_rate': round(approval_rate, 1),
+        'average_requests_per_day': round(average_requests_per_day, 1),
+        'image_upload_rate': round(image_upload_rate, 1),
+    }
+    
+    return render(request, 'admin/analytics_dashboard.html', context)
+
+@login_required
+def toggle_favorite(request, pk):
+    pet = get_object_or_404(Pet, pk=pk, is_active=True)
+    favorite, created = Favorite.objects.get_or_create(user=request.user, pet=pet)
+    
+    if not created:
+        # If favorite already exists, remove it
+        favorite.delete()
+        messages.success(request, f'{pet.name or pet.breed} removed from favorites')
+    else:
+        messages.success(request, f'{pet.name or pet.breed} added to favorites')
+    
+    return redirect('pet_detail', pk=pk)
+
+@login_required
+def favorites_list(request):
+    favorites = Favorite.objects.filter(user=request.user).select_related('pet')
+    return render(request, 'favorites.html', {'favorites': favorites})

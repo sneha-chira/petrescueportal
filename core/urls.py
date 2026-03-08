@@ -15,7 +15,10 @@ urlpatterns = [
     path('adoption-list/', views.adoption_list, name='adoption_list'),
     path('pet/<int:pk>/', views.pet_detail, name='pet_detail'),
     path('pet/<int:pk>/adopt/', views.submit_adoption_request, name='submit_adoption_request'),
+    path('pet/<int:pk>/favorite/', views.toggle_favorite, name='toggle_favorite'),
+    path('favorites/', views.favorites_list, name='favorites_list'),
     path('manage-adoption-requests/', views.admin_adoption_requests, name='admin_adoption_requests'),
+    path('analytics/', views.analytics_dashboard, name='analytics_dashboard'),
     path('admin/approve-request/<int:pk>/', views.approve_adoption_request, name='approve_adoption_request'),
     path('admin/reject-request/<int:pk>/', views.reject_adoption_request, name='reject_adoption_request'),
 ]

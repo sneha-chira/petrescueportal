@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics Dashboard - Pet Rescue Portal{% endblock %}
+
+{% block content %}
+<div class="row mb-5 mt-3">
+    <div class="col-md-12">
+        <div class="card shadow border-0 bg-gradient-primary text-white rounded-4 p-4 p-md-5 overflow-hidden position-relative">
+            <!-- Decorative circle -->
+            <div class="position-absolute rounded-circle bg-white opacity-10"
+                 style="width: 200px; height: 200px; top: -50px; right: -50px;"></div>
+
+            <div class="position-relative z-1 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h2 class="mb-2 fw-bold text-white"><i class="fa-solid fa-chart-line me-2"></i>Analytics Dashboard</h2>
+                    <p class="mb-0 lead text-white-50">Comprehensive insights and statistics for your pet rescue platform</p>
+                </div>
+                <div class="bg-white p-3 rounded-circle shadow-sm d-none d-md-block text-center"
+                     style="width: 80px; height: 80px;">
+                    <i class="fa-solid fa-chart-pie text-primary" style="font-size: 3rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Overview -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm border-0 rounded-4 h-100">
+            <div class="card-body text-center">
+                <div class="text-primary mb-2">
+                    <i class="fa-solid fa-paw fa-2x"></i>
+                </div>
+                <h5 class="card-title fw-bold">Total Pets</h5>
+                <h3 class="text-primary fw-bold">{{ total_pets }}</h3>
+                <p class="text-muted small mb-0">{{ recent_pets }} added this month</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm border-0 rounded-4 h-100">
+            <div class="card-body text-center">
+                <div class="text-success mb-2">
+                    <i class="fa-solid fa-heart fa-2x"></i>
+                </div>
+                <h5 class="card-title fw-bold">Adoption Requests</h5>
+                <h3 class="text-success fw-bold">{{ total_requests }}</h3>
+                <p class="text-muted small mb-0">{{ recent_requests }} this week</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm border-0 rounded-4 h-100">
+            <div class="card-body text-center">
+                <div class="text-warning mb-2">
+                    <i class="fa-solid fa-clock fa-2x"></i>
+                </div>
+                <h5 class="card-title fw-bold">Pending Requests</h5>
+                <h3 class="text-warning fw-bold">{{ pending_requests }}</h3>
+                <p class="text-muted small mb-0">{{ approved_requests }} approved</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm border-0 rounded-4 h-100">
+            <div class="card-body text-center">
+                <div class="text-info mb-2">
+                    <i class="fa-solid fa-check-circle fa-2x"></i>
+                </div>
+                <h5 class="card-title fw-bold">Success Rate</h5>
+                <h3 class="text-info fw-bold">
+                    {% if total_requests > 0 %}
+                        {% widthratio approved_requests|add:rejected_requests total_requests 100 as success_rate %}
+                        {{ success_rate|floatformat:0 }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </h3>
+                <p class="text-muted small mb-0">{{ rejected_requests }} rejected</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Statistics -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-light border-0 rounded-top">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-dog me-2"></i>Pet Status Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4 mb-3">
+                        <div class="p-3 bg-light rounded-3">
+                            <h6 class="text-muted mb-1">Active</h6>
+                            <h4 class="text-primary fw-bold">{{ active_pets }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-4 mb-3">
+                        <div class="p-3 bg-light rounded-3">
+                            <h6 class="text-muted mb-1">Lost</h6>
+                            <h4 class="text-danger fw-bold">{{ lost_pets }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-4 mb-3">
+                        <div class="p-3 bg-light rounded-3">
+                            <h6 class="text-muted mb-1">Found</h6>
+                            <h4 class="text-success fw-bold">{{ found_pets }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="p-3 bg-light rounded-3">
+                            <h6 class="text-muted mb-1">For Adoption</h6>
+                            <h4 class="text-info fw-bold">{{ adoption_pets }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-light border-0 rounded-top">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-chart-bar me-2"></i>Request Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4 mb-3">
+                        <div class="p-3 bg-warning bg-opacity-10 rounded-3">
+                            <h6 class="text-muted mb-1">Pending</h6>
+                            <h4 class="text-warning fw-bold">{{ pending_requests }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-4 mb-3">
+                        <div class="p-3 bg-success bg-opacity-10 rounded-3">
+                            <h6 class="text-muted mb-1">Approved</h6>
+                            <h4 class="text-success fw-bold">{{ approved_requests }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-4 mb-3">
+                        <div class="p-3 bg-danger bg-opacity-10 rounded-3">
+                            <h6 class="text-muted mb-1">Rejected</h6>
+                            <h4 class="text-danger fw-bold">{{ rejected_requests }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Analytics -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-light border-0 rounded-top">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-location-dot me-2"></i>Top Locations</h5>
+            </div>
+            <div class="card-body">
+                {% if top_locations %}
+                <div class="list-group list-group-flush">
+                    {% for location in top_locations %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fa-solid fa-map-marker-alt text-primary me-2"></i>
+                            <strong>{{ location.location }}</strong>
+                        </div>
+                        <span class="badge bg-primary rounded-pill">{{ location.count }} pets</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center mb-0">No location data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-light border-0 rounded-top">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-dog me-2"></i>Top Breeds</h5>
+            </div>
+            <div class="card-body">
+                {% if top_breeds %}
+                <div class="list-group list-group-flush">
+                    {% for breed in top_breeds %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fa-solid fa-paw text-info me-2"></i>
+                            <strong>{{ breed.breed }}</strong>
+                        </div>
+                        <span class="badge bg-info rounded-pill">{{ breed.count }} pets</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center mb-0">No breed data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-light border-0 rounded-top">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-clock me-2"></i>Recent Adoption Requests</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_adoption_requests %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Pet</th>
+                                <th>Requester</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for request in recent_adoption_requests %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if request.pet.image %}
+                                        <img src="{{ request.pet.image.url }}" class="rounded-circle me-2" 
+                                             style="width: 30px; height: 30px; object-fit: cover;" alt="{{ request.pet.breed }}">
+                                        {% else %}
+                                        <img src="https://placedog.net/30/30?random={{ request.pet.pk }}" class="rounded-circle me-2" 
+                                             style="width: 30px; height: 30px; object-fit: cover;" alt="{{ request.pet.breed }}">
+                                        {% endif %}
+                                        <div>
+                                            <strong>{{ request.pet.name|default:request.pet.breed }}</strong><br>
+                                            <small class="text-muted">{{ request.pet.color }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>{{ request.requester.username }}</strong><br>
+                                    <small class="text-muted">{{ request.requester.email }}</small>
+                                </td>
+                                <td>
+                                    {% if request.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                    {% elif request.status == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                    {% elif request.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ request.created_at|date:"M d, Y H:i" }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fa-solid fa-inbox text-muted mb-3" style="font-size: 3rem;"></i>
+                    <h4 class="text-muted">No recent activity</h4>
+                    <p class="text-muted">Adoption requests will appear here as they are submitted.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -52,8 +52,26 @@
                             </td>
                             <td>
                                 <div class="text-truncate" style="max-width: 200px;" title="{{ request.message }}">
-                                    {{ request.message|truncatechars:50 }}
+                                    {{ request.message|default:"No message"|truncatechars:50 }}
                                 </div>
+                                {% if request.family_info %}
+                                <div class="mt-2">
+                                    <small class="text-muted fw-bold">Family Info:</small><br>
+                                    <small>{{ request.family_info|truncatechars:30 }}</small>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if request.home_type %}
+                                <small class="text-muted fw-bold">Home:</small><br>
+                                <span class="badge bg-info text-white">{{ request.get_home_type_display }}</span>
+                                {% endif %}
+                                {% if request.pet_experience %}
+                                <div class="mt-1">
+                                    <small class="text-muted fw-bold">Experience:</small><br>
+                                    <span class="badge bg-secondary text-white">{{ request.get_pet_experience_display }}</span>
+                                </div>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if request.status == 'pending' %}
