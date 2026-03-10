@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}Adoption Requests - Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">
+            <i class="fa-solid fa-clipboard-list me-2"></i>Adoption Requests
+        </h2>
+        <div class="badge bg-primary rounded-pill px-3 py-2">
+            {{ adoption_requests|length }} Total Requests
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-0">
+            {% if adoption_requests %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Pet</th>
+                            <th>Requester</th>
+                            <th>Message</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in adoption_requests %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if request.pet.image %}
+                                    <img src="{{ request.pet.image.url }}" class="rounded-circle me-3" 
+                                         style="width: 40px; height: 40px; object-fit: cover;" alt="{{ request.pet.breed }}">
+                                    {% else %}
+                                    <img src="https://placedog.net/40/40?random={{ request.pet.pk }}" class="rounded-circle me-3" 
+                                         style="width: 40px; height: 40px; object-fit: cover;" alt="{{ request.pet.breed }}">
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ request.pet.name|default:request.pet.breed }}</strong><br>
+                                        <small class="text-muted">{{ request.pet.color }} • {{ request.pet.location }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <strong>{{ request.requester.username }}</strong><br>
+                                <small class="text-muted">{{ request.requester.email }}</small>
+                            </td>
+                            <td>
+                                <div class="text-truncate" style="max-width: 200px;" title="{{ request.message }}">
+                                    {{ request.message|default:"No message"|truncatechars:50 }}
+                                </div>
+                                {% if request.family_info %}
+                                <div class="mt-2">
+                                    <small class="text-muted fw-bold">Family Info:</small><br>
+                                    <small>{{ request.family_info|truncatechars:30 }}</small>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if request.home_type %}
+                                <small class="text-muted fw-bold">Home:</small><br>
+                                <span class="badge bg-info text-white">{{ request.get_home_type_display }}</span>
+                                {% endif %}
+                                {% if request.pet_experience %}
+                                <div class="mt-1">
+                                    <small class="text-muted fw-bold">Experience:</small><br>
+                                    <span class="badge bg-secondary text-white">{{ request.get_pet_experience_display }}</span>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if request.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif request.status == 'approved' %}
+                                <span class="badge bg-success">Approved</span>
+                                {% elif request.status == 'rejected' %}
+                                <span class="badge bg-danger">Rejected</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ request.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ request.created_at|date:"M d, Y H:i" }}</small>
+                            </td>
+                            <td>
+                                {% if request.status == 'pending' %}
+                                <div class="btn-group" role="group">
+                                    <a href="/custom-admin/approve-request/{{ request.pk }}/" 
+                                       class="btn btn-sm btn-success rounded-pill" 
+                                       onclick="return confirm('Are you sure you want to approve this adoption request?')">
+                                        <i class="fa-solid fa-check me-1"></i>Approve
+                                    </a>
+                                    <a href="/custom-admin/reject-request/{{ request.pk }}/" 
+                                       class="btn btn-sm btn-danger rounded-pill"
+                                       onclick="return confirm('Are you sure you want to reject this adoption request?')">
+                                        <i class="fa-solid fa-times me-1"></i>Reject
+                                    </a>
+                                </div>
+                                {% elif request.status == 'approved' %}
+                                <span class="text-success fw-semibold">
+                                    <i class="fa-solid fa-check-circle me-1"></i>Approved
+                                </span>
+                                {% elif request.status == 'rejected' %}
+                                <span class="text-danger fw-semibold">
+                                    <i class="fa-solid fa-times-circle me-1"></i>Rejected
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fa-solid fa-inbox text-muted mb-3" style="font-size: 3rem;"></i>
+                <h4 class="text-muted">No adoption requests yet</h4>
+                <p class="text-muted">When users submit adoption requests, they will appear here.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
